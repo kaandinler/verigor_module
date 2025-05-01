@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:verigor_module/data/service/file_service.dart';
 import 'package:verigor_module/data/service/query_service.dart';
+import 'package:verigor_module/models/message_type.dart';
 import 'package:verigor_module/models/repository/file_repository.dart';
 import 'package:verigor_module/models/repository/query_repository.dart';
 
 import 'resizable_answer_widget.dart';
 
 class QAScreen extends StatefulWidget {
-  final String endpoint;
   final String Function() tokenProvider;
-  const QAScreen({super.key, required this.endpoint, required this.tokenProvider});
+  const QAScreen({super.key, required this.tokenProvider});
 
   @override
   createState() => _QAScreenState();
@@ -179,7 +179,6 @@ class _QAScreenState extends State<QAScreen> {
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
       ),
-
       child: FutureBuilder<List<String>>(
         future: _getFiles(),
         builder: (context, snap) {
@@ -187,19 +186,18 @@ class _QAScreenState extends State<QAScreen> {
           final files = snap.data!;
           return ListView(
             shrinkWrap: true,
-            children:
-                files.map((name) {
-                  return RadioListTile(
-                    groupValue: _selectedFile,
-                    title: Text(name),
-                    value: name,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedFile = value!;
-                      });
-                    },
-                  );
-                }).toList(),
+            children: files.map((name) {
+              return RadioListTile(
+                groupValue: _selectedFile,
+                title: Text(name),
+                value: name,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFile = value!;
+                  });
+                },
+              );
+            }).toList(),
           );
         },
       ),
@@ -222,10 +220,6 @@ class _QAScreenState extends State<QAScreen> {
                 child: TextField(
                   controller: _textController,
                   decoration: const InputDecoration(hintText: 'Sorunuzu buraya yazabilirsiniz', border: OutlineInputBorder()),
-                  // onTap:
-                  //     () => setState(() {
-                  //       _showFileList = true;
-                  //     }),
                   onSubmitted: (_) {
                     _sendQuestion();
                     setState(() {
@@ -244,17 +238,4 @@ class _QAScreenState extends State<QAScreen> {
       ),
     );
   }
-}
-
-/// Defines the type of message: either a text question or a webview answer.
-enum MessageType { text, webview }
-
-class Message {
-  final MessageType type;
-  final String? text;
-  final String? requestId;
-
-  Message._(this.type, {this.text, this.requestId});
-  factory Message.text(String txt) => Message._(MessageType.text, text: txt);
-  factory Message.webView(String reqId) => Message._(MessageType.webview, requestId: reqId);
 }

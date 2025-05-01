@@ -16,6 +16,8 @@ export '/models/repository/query_repository.dart';
 
 // Domain models
 export 'models/file_entity.dart';
+export 'models/message_type.dart';
+export 'models/query_entity.dart';
 
 // Core widgets
 export 'src/qa_screen.dart';
