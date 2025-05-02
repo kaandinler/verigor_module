@@ -1,5 +1,3 @@
-library verigor_module;
-
 // DTOs & helpers
 export '/data/base/base_response.dart';
 export '/data/models/request/file_request.dart';

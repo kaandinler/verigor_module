@@ -48,10 +48,8 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
         controller.addJavaScriptHandler(
           handlerName: 'NotifyFetchResult',
           callback: (args) {
-            final url = args.length > 0 ? args[0] as String : '';
+            final url = args.isNotEmpty ? args[0] as String : '';
             final status = args.length > 1 ? args[1] as int : -1;
-            final body = args.length > 2 ? args[2] as String : '';
-            print("✔️ Response – URL: $url\nStatus: $status\nBody: $body");
 
             // 403 yakalama
             if (status == 403) {
@@ -62,7 +60,7 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
             }
 
             // Belirli endpoint tamamlandığında yükseklik ölçümünü tetikle
-            if (url.contains('/api/query/')) {
+            if (url.contains('/api/query') || url.contains('/public/result')) {
               controller.evaluateJavascript(
                 source: """
                           window.flutter_inappwebview.callHandler(
