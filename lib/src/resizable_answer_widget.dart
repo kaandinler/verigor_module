@@ -34,15 +34,19 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
   InAppWebView _webView(BuildContext context) {
     return InAppWebView(
       // 1) Header’lı ilk istek
-      initialUrlRequest: URLRequest(url: WebUri(_answerUrl)),
+      initialUrlRequest: URLRequest(
+        url: WebUri(_answerUrl),
+        headers: {'x-token': widget.tokenProvider()},
+      ),
+      //
       // initialUrlRequest: URLRequest(url: WebUri(_answer_url), headers: {"Authorization": "Bearer $token"}),
       initialSettings: InAppWebViewSettings(
         useShouldOverrideUrlLoading: true,
         javaScriptEnabled: true,
         enableViewportScale: true,
         useWideViewPort: true,
-        disableHorizontalScroll: false,
-        disableVerticalScroll: true,
+        // disableHorizontalScroll: false,
+        // disableVerticalScroll: true,
       ),
       onWebViewCreated: (controller) async {
         controller.addJavaScriptHandler(
