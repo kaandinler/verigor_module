@@ -1,5 +1,5 @@
-import 'package:verigor_module/data/service/query_service.dart';
-import 'package:verigor_module/models/query_entity.dart';
+import 'package:verigor_module_flutter/data/service/query_service.dart';
+import 'package:verigor_module_flutter/models/query_entity.dart';
 
 /// Repository layer: uses the service to perform queries and map to domain.
 class QueryRepository {

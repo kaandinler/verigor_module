@@ -1,5 +1,5 @@
-import 'package:verigor_module/data/service/file_service.dart';
-import 'package:verigor_module/models/file_entity.dart';
+import 'package:verigor_module_flutter/data/service/file_service.dart';
+import 'package:verigor_module_flutter/models/file_entity.dart';
 
 /// Repository layer: converts service DTOs into domain entities.
 class FileRepository {

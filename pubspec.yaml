@@ -1,4 +1,4 @@
-name: verigor_module
+name: verigor_module_flutter
 description: "Quick And Quality Code VeriGor Q&A Flutter package with file selector and WebView answers."
 version: 0.1.0
 homepage: https://github.com/kaandinler/verigor_module.git
@@ -9,10 +9,12 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  verigor_module_flutter:
-      git:
-        url: https://github.com/kaandinler/verigor_module.git
-        ref: main
+
+  # A package may not list itself as a dependency.
+  # verigor_module:
+  #     git:
+  #       url: https://github.com/kaandinler/verigor_module.git
+  #       ref: main
   flutter:
     sdk: flutter
   dio: ^5.8.0+1

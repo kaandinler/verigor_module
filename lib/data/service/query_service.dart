@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:verigor_module/data/base/base_response.dart';
-import 'package:verigor_module/data/models/response/query_response.dart';
+import 'package:verigor_module_flutter/data/base/base_response.dart';
+import 'package:verigor_module_flutter/data/models/response/query_response.dart';
 
 /// Responsible for calling the query API endpoint.
 class QueryService {

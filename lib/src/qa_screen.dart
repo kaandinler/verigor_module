@@ -2,11 +2,11 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:verigor_module/data/service/file_service.dart';
-import 'package:verigor_module/data/service/query_service.dart';
-import 'package:verigor_module/models/message_type.dart';
-import 'package:verigor_module/models/repository/file_repository.dart';
-import 'package:verigor_module/models/repository/query_repository.dart';
+import 'package:verigor_module_flutter/data/service/file_service.dart';
+import 'package:verigor_module_flutter/data/service/query_service.dart';
+import 'package:verigor_module_flutter/models/message_type.dart';
+import 'package:verigor_module_flutter/models/repository/file_repository.dart';
+import 'package:verigor_module_flutter/models/repository/query_repository.dart';
 
 import 'resizable_answer_widget.dart';
 

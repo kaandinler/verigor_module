@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:verigor_module/verigor_module.dart';
+import 'package:verigor_module_flutter/verigor_module.dart';
 
 void main() {
   // 1) Initialize the VerigorModule with a token provider.

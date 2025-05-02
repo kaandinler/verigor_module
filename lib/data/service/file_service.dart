@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:verigor_module/data/base/base_response.dart';
-import 'package:verigor_module/data/models/response/file_response.dart';
+import 'package:verigor_module_flutter/data/base/base_response.dart';
+import 'package:verigor_module_flutter/data/models/response/file_response.dart';
 
 /// Responsible solely for making HTTP requests to fetch file data.
 class FileService {
