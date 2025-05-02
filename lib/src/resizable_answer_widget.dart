@@ -11,7 +11,7 @@ class ResizableAnswerWidget extends StatefulWidget {
 }
 
 class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
-  double _height = 1; // başlangıçta küçük bir yükseklik
+  double _height = 200; // başlangıç yüksekliği
 
   late final _answerUrl = "https://d2ql5i2hsdk9xi.cloudfront.net/public/result?request-id=${widget.requestId}";
   @override
