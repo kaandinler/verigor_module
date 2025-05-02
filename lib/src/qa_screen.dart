@@ -43,7 +43,6 @@ class _QAScreenState extends State<QAScreen> {
 
   void _sendQuestion() async {
     if (_textController.text.trim().isEmpty || _isSending) return;
-    if (_selectedFile.isEmpty) return;
 
     setState(() {
       _isSending = true;
@@ -137,8 +136,6 @@ class _QAScreenState extends State<QAScreen> {
             ),
           );
         } else {
-          // Cevabı ResizableWebView ile göster
-          // final url = 'https://d2ql5i2hsdk9xi.cloudfront.net/public/result?request-id=${msg.requestId}';
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: ResizableAnswerWidget(requestId: msg.requestId ?? '', tokenProvider: widget.tokenProvider),
@@ -155,7 +152,7 @@ class _QAScreenState extends State<QAScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            _selectedFile == "" ? 'Lütfen bir dosya seçin' : 'Seçilen Dosya "$_selectedFile" ',
+            _selectedFile == "" ? 'Dosyalar ⬇️⬇' : 'Seçilen Dosya "$_selectedFile" ',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
           ),
           IconButton(
