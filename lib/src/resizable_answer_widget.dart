@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -48,6 +49,20 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
         // disableHorizontalScroll: false,
         // disableVerticalScroll: true,
       ),
+      initialData: InAppWebViewInitialData(data: '<html><body>Loading…</body></html>'),
+      onLoadStop: (controller, __) async {
+        // after initial “loading” screen, do the real fetch:
+        final token = widget.tokenProvider();
+        final resp = await Dio().get<String>(
+          _answerUrl,
+          options: Options(headers: {'x-token': token}),
+        );
+        // push the HTML into the WebView:
+        await controller.loadData(data: resp.data!, baseUrl: WebUri(_answerUrl));
+        // measure height:
+        final raw = await controller.evaluateJavascript(source: 'document.documentElement.scrollHeight;');
+        if (raw is num) setState(() => _height = raw.toDouble());
+      },
       onWebViewCreated: (controller) async {
         controller.addJavaScriptHandler(
           handlerName: 'NotifyFetchResult',
