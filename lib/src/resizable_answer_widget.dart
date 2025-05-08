@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -37,32 +36,29 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
       // 1) Header’lı ilk istek
       initialUrlRequest: URLRequest(
         url: WebUri(_answerUrl),
-        headers: {'x-token': widget.tokenProvider()},
+        // headers: {'x-token': widget.tokenProvider()},
       ),
       //
       // initialUrlRequest: URLRequest(url: WebUri(_answer_url), headers: {"Authorization": "Bearer $token"}),
       initialSettings: InAppWebViewSettings(
-        useShouldOverrideUrlLoading: true,
         javaScriptEnabled: true,
-        enableViewportScale: true,
-        useWideViewPort: true,
+
         // disableHorizontalScroll: false,
         // disableVerticalScroll: true,
       ),
-      initialData: InAppWebViewInitialData(data: '<html><body>Loading…</body></html>'),
-      onLoadStop: (controller, __) async {
-        // after initial “loading” screen, do the real fetch:
-        final token = widget.tokenProvider();
-        final resp = await Dio().get<String>(
-          _answerUrl,
-          options: Options(headers: {'x-token': token}),
-        );
-        // push the HTML into the WebView:
-        await controller.loadData(data: resp.data!, baseUrl: WebUri(_answerUrl));
-        // measure height:
-        final raw = await controller.evaluateJavascript(source: 'document.documentElement.scrollHeight;');
-        if (raw is num) setState(() => _height = raw.toDouble());
-      },
+      // onLoadStop: (controller, __) async {
+      //   // after initial “loading” screen, do the real fetch:
+      //   final token = widget.tokenProvider();
+      //   final resp = await Dio().get<String>(
+      //     _answerUrl,
+      //     options: Options(headers: {'x-token': token}),
+      //   );
+      //   // push the HTML into the WebView:
+      //   await controller.loadData(data: resp.data!, baseUrl: WebUri(_answerUrl));
+      //   // measure height:
+      //   final raw = await controller.evaluateJavascript(source: 'document.documentElement.scrollHeight;');
+      //   if (raw is num) setState(() => _height = raw.toDouble());
+      // },
       onWebViewCreated: (controller) async {
         controller.addJavaScriptHandler(
           handlerName: 'NotifyFetchResult',
@@ -72,7 +68,7 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
 
             // 403 yakalama
             if (status == 403) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Authentication failed (403). Lütfen tekrar giriş yapın.')));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed (403). Lütfen tekrar giriş yapın.')));
               controller.stopLoading();
               controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
               return;
@@ -184,7 +180,7 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
                       const origFetch = window.fetch;
                       window.fetch = function (input, init = {}) {
                         init.headers = new Headers(init.headers || {});
-  
+
                         init.headers.set('x-token', '${widget.tokenProvider()}');
                         return origFetch.call(this, input, init);
                       };
@@ -234,6 +230,23 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
             }
           },
         );
+      },
+      onReceivedError: (controller, request, error) {
+        if (error.type == WebResourceErrorType.NOT_CONNECTED_TO_INTERNET) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('İnternet bağlantınızı kontrol edin.')));
+        }
+        if (error.type == WebResourceErrorType.CANCELLED) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('İstek iptal edildi.')));
+        }
+        if (error.type == WebResourceErrorType.UNKNOWN) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bilinmeyen hata oluştu.')));
+        }
+        if (error.type == WebResourceErrorType.TIMEOUT) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('İstek zaman aşımına uğradı.')));
+        }
+        if (error.type == WebResourceErrorType.UNSUPPORTED_SCHEME) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Desteklenmeyen şema hatası.')));
+        }
       },
     );
   }
