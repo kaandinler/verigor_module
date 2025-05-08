@@ -38,79 +38,40 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
         url: WebUri(_answerUrl),
         // headers: {'x-token': widget.tokenProvider()},
       ),
-      //
+
       // initialUrlRequest: URLRequest(url: WebUri(_answer_url), headers: {"Authorization": "Bearer $token"}),
       initialSettings: InAppWebViewSettings(
         javaScriptEnabled: true,
-
-        // disableHorizontalScroll: false,
-        // disableVerticalScroll: true,
       ),
-      // onLoadStop: (controller, __) async {
-      //   // after initial “loading” screen, do the real fetch:
-      //   final token = widget.tokenProvider();
-      //   final resp = await Dio().get<String>(
-      //     _answerUrl,
-      //     options: Options(headers: {'x-token': token}),
-      //   );
-      //   // push the HTML into the WebView:
-      //   await controller.loadData(data: resp.data!, baseUrl: WebUri(_answerUrl));
-      //   // measure height:
-      //   final raw = await controller.evaluateJavascript(source: 'document.documentElement.scrollHeight;');
-      //   if (raw is num) setState(() => _height = raw.toDouble());
-      // },
+
       onWebViewCreated: (controller) async {
         controller.addJavaScriptHandler(
-            handlerName: 'NotifyFetchResult',
-            callback: (args) {
-              final status = args.length > 1 ? args[1] as int : -1;
-              final responseBody = args.length > 2 ? args[2] : null;
+          handlerName: 'NotifyFetchResult',
+          callback: (args) {
+            final url = args.isNotEmpty ? args[0] as String : '';
+            final status = args.length > 1 ? args[1] as int : -1;
 
-              // 403 yakalama
-              if (status == 403) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed (403). Lütfen tekrar giriş yapın.')));
-                controller.stopLoading();
-                controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
-                return;
-              }
-
-              // API cevabını kontrol et
-              if (responseBody is String && responseBody.contains('"result_status":true')) {
-                controller.evaluateJavascript(
-                  source: """
-                          window.flutter_inappwebview.callHandler(
-                            'SetContentHeight',
-                            document.body.scrollHeight
-                          );
-                        """,
-                );
-              }
+            // 403 yakalama
+            if (status == 403) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed (403). Lütfen tekrar giriş yapın.')));
+              controller.stopLoading();
+              controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+              return;
             }
-            // callback: (args) {
-            //   final url = args.isNotEmpty ? args[0] as String : '';
-            //   final status = args.length > 1 ? args[1] as int : -1;
 
-            //   // 403 yakalama
-            //   if (status == 403) {
-            //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed (403). Lütfen tekrar giriş yapın.')));
-            //     controller.stopLoading();
-            //     controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
-            //     return;
-            //   }
-
-            //   // Belirli endpoint tamamlandığında yükseklik ölçümünü tetikle
-            //   if (url.contains('/api/query') || url.contains('/public/result')) {
-            //     controller.evaluateJavascript(
-            //       source: """
-            //                 window.flutter_inappwebview.callHandler(
-            //                   'SetContentHeight',
-            //                   document.body.scrollHeight
-            //                 );
-            //               """,
-            //     );
-            //   }
-            // },
-            );
+            // Belirli endpoint tamamlandığında yükseklik ölçümünü tetikle
+            if (url.contains('/api/query') || url.contains('/public/result')) {
+              controller.evaluateJavascript(
+                source: """
+                            window.flutter_inappwebview.callHandler(
+                              'SetContentHeight',
+                              document.body.scrollHeight
+                            );
+                          """,
+              );
+            }
+          },
+        );
 
         await controller.addUserScript(
           userScript: UserScript(
@@ -190,13 +151,8 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
       """,
           ),
         );
-
-        // final token = widget.headers?['Authorization'] ?? widget.tokenProvider();
-        final bearer = 'Bearer ';
-        // final bearer = 'Bearer $token';
         final script = '''
                     (function () {
-                      const TOKEN = "${bearer.replaceAll('"', r'\"')}";
                       const XHR = XMLHttpRequest.prototype;
                       /* ----------------------------------------------------------
                         FETCH
