@@ -27,9 +27,9 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
   bool _showTabSection = false;
 
   final List<String> _defaultExampleQuestions = [
-    '“Merhaba, nasılsın?”',
-    '“Bugünkü hava nasıl?”',
-    '“Flutter’da state nasıl yönetilir?”',
+    "Tüm zamanların en yüksel gelir elde edilen satışı hangisi?",
+    "2025 Yılına ait en yüksek gelir elde edilen satış hangisi?",
+    "2025 Yılına ait en düşük gelir elde edilen satış hangisi?",
   ];
 
   late TabController _tabController;
