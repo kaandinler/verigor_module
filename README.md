@@ -30,7 +30,7 @@ String _getToken() {
 }
 ```
 
-### 2. QAScreen Widget'ını Kullanın
+### 2. VeriGorModule Widget'ını Kullanın
 
 ```dart
 import 'package:verigor_module_flutter/verigor_module.dart';
@@ -91,6 +91,13 @@ Sadece örnek soruları alt alta listeler. (Kendi başına da kullanılabilir.)
 
 ---
 
+## Servis Adreslerini Özelleştirme
+
+Modülü implemente edecek kullanıcılar, kendi servis adreslerini `lib/data/service/query_service.dart` dosyasındaki `url` sabitini düzenleyerek değiştirebilirler.  
+Aynı şekilde, dosya servis adresi için de ilgili servis dosyasındaki URL'yi güncelleyebilirsiniz.
+
+---
+
 ## Dosya Yapısı
 
 - `src/verigor_screen.dart`: Ana ekran.
@@ -109,6 +116,13 @@ C: `exampleQuestions` parametresine bir liste verin. En fazla 3 örnek soru ekle
 
 **S: Token nasıl güncellenir?**  
 C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürün.
+
+**S: xToken Nedir?**
+C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürdüğünüz xToken; VeriGor servislerini kullanabilmeniz için proje yöneticinizin sizin kullanıcı hesabınıza tanımlaması gereken bir kimlik/doğrulama bilgisidir. Bu Token bilgisi sayesinde VeriGor servislerini kullanabilme imkanı sağlanmaktadır.
+
+**S: Token Bilgisi Alacağım Servisi Nasıl Değiştirebilirim?**  
+C: Modülü implemente edecek kullanıcılar, kendi servis adreslerini `lib/data/service/query_service.dart` dosyasındaki `url` sabitini ve diğer alanları düzenleyerek değiştirebilirler.  
+Aynı şekilde, dosya servis adresi için de ilgili servis dosyasındaki URL'yi güncelleyebilirsiniz.
 
 ---
 
