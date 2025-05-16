@@ -98,6 +98,52 @@ Aynı şekilde, dosya servis adresi için de ilgili servis dosyasındaki URL'yi 
 
 ---
 
+## Servisler ve Repository'ler
+
+### FileService
+
+- **fetchFiles(String xToken):**
+  - **Payload:**  
+    - Header: `x-token` (String)
+  - **Return:**  
+    - `BaseResponse<List<FileData>>`  
+    - Başarılıysa: `data` alanı List<FileData> içerir.
+
+### QueryService
+
+- **sendQuery({required String xToken, required String query, required String threadId, required String fileName}):**
+  - **Payload:**  
+    - Header: `x-token` (String)
+    - Body (JSON):  
+      - `query` (String)  
+      - `thread_id` (String)  
+      - `file_name` (String)
+  - **Return:**  
+    - `BaseResponse<QueryData>`  
+    - Başarılıysa: `data` alanı QueryData içerir (`requestId`).
+
+---
+
+### FileRepository
+
+- **getFiles(String xToken):**
+  - **Payload:**  
+    - `xToken` parametresi doğrudan FileService'e iletilir.
+  - **Return:**  
+    - Başarılıysa: `List<FileEntity>`  
+    - Hata durumunda: Exception fırlatır.
+
+### QueryRepository
+
+- **createQuery({required String xToken, required String query, required String threadId, required String fileName}):**
+  - **Payload:**  
+    - Parametreler doğrudan QueryService'e iletilir.
+  - **Return:**  
+    - Başarılıysa: `QueryEntity` (`requestId` içerir)
+    - Hata durumunda: Exception fırlatır.
+
+---
+
 ## Dosya Yapısı
 
 - `src/verigor_screen.dart`: Ana ekran.
@@ -117,8 +163,8 @@ C: `exampleQuestions` parametresine bir liste verin. En fazla 3 örnek soru ekle
 **S: Token nasıl güncellenir?**  
 C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürün.
 
-**S: xToken Nedir?**
-C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürdüğünüz xToken; VeriGor servislerini kullanabilmeniz için proje yöneticinizin sizin kullanıcı hesabınıza tanımlaması gereken bir kimlik/doğrulama bilgisidir. Bu Token bilgisi sayesinde VeriGor servislerini kullanabilme imkanı sağlanmaktadır.
+**S: Token Nedir?**  
+C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürdüğünüz Token; VeriGor servislerini kullanabilmeniz için proje yöneticinizin sizin kullanıcı hesabınıza tanımlaması gereken bir kimlik bilgisidir. Bu Token bilgisi sayesinde VeriGor servislerini kullanabilme imkanı sağlanmaktadır.
 
 **S: Token Bilgisi Alacağım Servisi Nasıl Değiştirebilirim?**  
 C: Modülü implemente edecek kullanıcılar, kendi servis adreslerini `lib/data/service/query_service.dart` dosyasındaki `url` sabitini ve diğer alanları düzenleyerek değiştirebilirler.  
