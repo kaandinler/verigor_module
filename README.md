@@ -1,6 +1,6 @@
 # verigor_module_flutter
 
-VeriGor Q&A Flutter Modülü, dosya seçici ve WebView tabanlı cevap gösterimi ile hızlı ve kaliteli bir soru-cevap deneyimi sunar.
+VeriGor Flutter Modülü, dosya seçici ve WebView tabanlı cevap gösterimi ile hızlı ve kaliteli bir soru-cevap deneyimi sunar.
 
 ---
 
@@ -35,7 +35,7 @@ String _getToken() {
 ```dart
 import 'package:verigor_module_flutter/verigor_module.dart';
 
-QAScreen(
+VeriGorModule(
   tokenProvider: _getToken,
   // İsteğe bağlı: örnek sorular
   exampleQuestions: [
@@ -52,7 +52,7 @@ QAScreen(
 MaterialApp(
   home: Scaffold(
     appBar: AppBar(title: Text('Demo')),
-    body: QAScreen(tokenProvider: _getToken),
+    body: VeriGorModule(tokenProvider: _getToken),
   ),
 );
 ```
@@ -87,16 +87,16 @@ Sadece örnek soruları alt alta listeler. (Kendi başına da kullanılabilir.)
 
 ### ViewModel Ayrımı
 
-İş mantığı (API çağrıları) `QAViewModel` içinde tutulur. UI katmanı sadece bu ViewModel’i kullanır.
+İş mantığı (API çağrıları) `VeriGorViewModel` içinde tutulur. UI katmanı sadece bu ViewModel’i kullanır.
 
 ---
 
 ## Dosya Yapısı
 
-- `src/qa_screen.dart`: Ana ekran.
+- `src/verigor_screen.dart`: Ana ekran.
 - `src/widgets/example_question_widget.dart`: Örnek sorular listesi.
 - `src/widgets/resizable_answer_widget.dart`: WebView ile cevap gösterimi.
-- `src/qu_view_model.dart`: ViewModel (iş mantığı).
+- `src/verigor_view_model.dart`: ViewModel (iş mantığı).
 - `models/`: Veri modelleri ve repository katmanı.
 - `data/service/`: API servisleri.
 
@@ -105,7 +105,7 @@ Sadece örnek soruları alt alta listeler. (Kendi başına da kullanılabilir.)
 ## Sıkça Sorulan Sorular
 
 **S: Kendi örnek sorularımı nasıl eklerim?**  
-C: `exampleQuestions` parametresine bir liste verin.
+C: `exampleQuestions` parametresine bir liste verin. En fazla 3 örnek soru eklenebilir.
 
 **S: Token nasıl güncellenir?**  
 C: `tokenProvider` fonksiyonunuzda güncel token’ı döndürün.
