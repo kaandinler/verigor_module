@@ -1,34 +1,39 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:verigor_module_flutter/data/service/file_service.dart';
-import 'package:verigor_module_flutter/data/service/query_service.dart';
 import 'package:verigor_module_flutter/models/message_type.dart';
-import 'package:verigor_module_flutter/models/repository/file_repository.dart';
-import 'package:verigor_module_flutter/models/repository/query_repository.dart';
+import 'package:verigor_module_flutter/src/verigor_view_model.dart';
+import 'package:verigor_module_flutter/src/widgets/example_question_widget.dart';
 
-import 'resizable_answer_widget.dart';
+import 'widgets/resizable_answer_widget.dart';
 
-class QAScreen extends StatefulWidget {
+class VeriGorModule extends StatefulWidget {
   final String Function() tokenProvider;
-  const QAScreen({super.key, required this.tokenProvider});
+  final List<String>? exampleQuestions;
+  VeriGorModule({super.key, required this.tokenProvider, List<String>? exampleQuestions})
+      : exampleQuestions = exampleQuestions ?? List.filled(3, '', growable: false);
 
   @override
-  createState() => _QAScreenState();
+  createState() => _VeriGorModuleState();
 }
 
-class _QAScreenState extends State<QAScreen> {
+class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProviderStateMixin {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSending = false;
   String _threadId = 'threadId';
   String _selectedFile = "";
   bool _showFileList = false;
+  int? _selectedExampleIndex;
+  bool _showTabSection = false;
 
-  // Repositories for file and query services
-  final QueryRepository _queryRepository = QueryRepository(service: QueryService());
-  final FileRepository _fileRepository = FileRepository(service: FileService());
+  final List<String> _defaultExampleQuestions = [
+    '“Merhaba, nasılsın?”',
+    '“Bugünkü hava nasıl?”',
+    '“Flutter’da state nasıl yönetilir?”',
+  ];
+
+  late TabController _tabController;
+  final VeriGorViewModel _viewModel = VeriGorViewModel();
 
   // Mesaj listesi: sorular da cevaplar da Message tipinde tutuluyor
   final List<Message> _messages = [];
@@ -36,9 +41,7 @@ class _QAScreenState extends State<QAScreen> {
   // Fetches the list of files from the server
   Future<List<String>> _getFiles() async {
     final token = widget.tokenProvider();
-    final response = await _fileRepository.getFiles(token);
-    log('Files: $response');
-    return response.map((file) => file.name).toList();
+    return await _viewModel.getFiles(token);
   }
 
   void _sendQuestion() async {
@@ -53,29 +56,45 @@ class _QAScreenState extends State<QAScreen> {
     _textController.clear();
 
     try {
-      // Here you could pass selectedFiles to your payloadBuilder if you like
-      final query = question;
-      final threadId = _threadId;
-      final fileName = _selectedFile; // Use the selected file
-
-      final entity = await _queryRepository.createQuery(xToken: widget.tokenProvider(), query: query, threadId: threadId, fileName: fileName);
-
+      final msg = await _viewModel.sendQuestion(
+        token: widget.tokenProvider(),
+        question: question,
+        threadId: _threadId,
+        fileName: _selectedFile,
+      );
       setState(() {
-        _messages.add(Message.webView(entity.requestId));
+        _messages.add(msg);
       });
 
-      // Hide keyboard
       if (mounted) {
         FocusScope.of(context).unfocus();
       }
 
-      // scroll to bottom
-      await Future.delayed(const Duration(milliseconds: 100));
-      _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      Future.delayed(const Duration(milliseconds: 800), () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      });
+
+      _showTabSection = false;
     } catch (e) {
-      setState(() => _messages.add(Message.text('Hata: $e')));
+      setState(() {
+        if (mounted) {
+          _messages.add(Message.text('Mesaj gönderilirken hata oluştu: $e'));
+        }
+      });
     } finally {
-      setState(() => _isSending = false);
+      setState(() {
+        if (mounted) {
+          _isSending = false;
+        }
+      });
     }
   }
 
@@ -84,6 +103,13 @@ class _QAScreenState extends State<QAScreen> {
     super.initState();
     // Generate UUID for threadId
     _threadId = Uuid().v4();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -104,10 +130,51 @@ class _QAScreenState extends State<QAScreen> {
         bottomSheet: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            //Show - Hide File List Button
-            _showHideFileList(),
+            // 1) Sekme başlıkları ve yanındaki aç/kapa butonu
+            Row(
+              children: [
+                Expanded(
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: Colors.blue,
+                    unselectedLabelColor: Colors.grey,
+                    indicatorColor: Colors.blue,
+                    tabs: const [
+                      Tab(text: 'Dosyalar'),
+                      Tab(text: 'Örnek Sorular'),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(_showTabSection ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () => setState(() => _showTabSection = !_showTabSection),
+                ),
+              ],
+            ),
 
-            if (_showFileList) _fileListWidget(),
+            // 2) Animasyonlu açılır-kapanır içerik
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: _showTabSection ? 250 : 0),
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _fileListWidget(),
+                      ExampleQuestionsWidget(
+                        questions: widget.exampleQuestions ?? _defaultExampleQuestions,
+                        selectedIndex: _selectedExampleIndex,
+                        onChanged: (v) => setState(() => _textController.text = widget.exampleQuestions?[v ?? 0] ?? ""),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 3) Gönderme alanı vs.
             _sendQuestionInputField(),
             SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
@@ -145,29 +212,6 @@ class _QAScreenState extends State<QAScreen> {
     );
   }
 
-  Padding _showHideFileList() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            _selectedFile == "" ? 'Dosyalar ⬇️⬇' : 'Seçilen Dosya "$_selectedFile" ',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
-          ),
-          IconButton(
-            icon: Icon(_showFileList ? Icons.keyboard_arrow_down_outlined : Icons.keyboard_arrow_up_outlined),
-            onPressed: () {
-              setState(() {
-                _showFileList = !_showFileList;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   Container _fileListWidget() {
     return Container(
       constraints: BoxConstraints(maxHeight: 200),
@@ -181,6 +225,18 @@ class _QAScreenState extends State<QAScreen> {
         builder: (context, snap) {
           if (!snap.hasData) return const Padding(padding: EdgeInsets.all(8), child: Center(child: CircularProgressIndicator()));
           final files = snap.data!;
+
+          if (files.isEmpty) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.info_outline, color: Colors.blue[100]),
+                const SizedBox(width: 8),
+                Text('Dosya bulunamadı'),
+              ],
+            );
+          }
+
           return ListView(
             shrinkWrap: true,
             children: files.map((name) {

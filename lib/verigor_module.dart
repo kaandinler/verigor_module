@@ -18,8 +18,8 @@ export 'models/message_type.dart';
 export 'models/query_entity.dart';
 
 // Core widgets
-export 'src/qa_screen.dart';
-export 'src/resizable_answer_widget.dart';
+export 'src/verigor_screen.dart';
+export 'src/widgets/resizable_answer_widget.dart';
 
 /// A typedef for token providers
 typedef TokenProvider = String Function();

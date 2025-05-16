@@ -8,7 +8,7 @@ void main() {
 
 //Example Token
 String _getToken() {
-  return '78a103c0-d081-708d-75b4-3269cac6fd2e:00964822-8834-4436-a860-44a29517d8db';
+  return '78a103c0-d081-a143-75b4-3269cac6fd2e:11478521-8834-4436-a860-44a29517d8db';
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
               onPressed: () {
                 Navigator.of(
                   context,
-                ).push(MaterialPageRoute(builder: (_) => QAScreen(tokenProvider: _getToken)));
+                ).push(MaterialPageRoute(builder: (_) => VeriGorModule(tokenProvider: _getToken)));
               },
               child: const Icon(Icons.chat),
             );
