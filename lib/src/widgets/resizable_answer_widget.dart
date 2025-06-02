@@ -12,8 +12,33 @@ class ResizableAnswerWidget extends StatefulWidget {
 
 class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
   double _height = 200; // başlangıç yüksekliği
-
+  InAppWebViewController? _webViewController;
   late final _answerUrl = "https://d2ql5i2hsdk9xi.cloudfront.net/public/result?request-id=${widget.requestId}";
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Give some time for the view to be built before trying to measure
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _updateContentHeight();
+      });
+    });
+  }
+
+  void _updateContentHeight() {
+    if (_webViewController != null && mounted) {
+      _webViewController!.evaluateJavascript(
+        source: """
+          window.flutter_inappwebview.callHandler(
+            'SetContentHeight',
+            document.body.scrollHeight
+          );
+        """,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -45,6 +70,7 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
       ),
 
       onWebViewCreated: (controller) async {
+        _webViewController = controller;
         controller.addJavaScriptHandler(
           handlerName: 'NotifyFetchResult',
           callback: (args) {
@@ -61,14 +87,15 @@ class _ResizableAnswerWidgetState extends State<ResizableAnswerWidget> {
 
             // Belirli endpoint tamamlandığında yükseklik ölçümünü tetikle
             if (url.contains('/api/query') || url.contains('/public/result')) {
-              controller.evaluateJavascript(
-                source: """
-                            window.flutter_inappwebview.callHandler(
-                              'SetContentHeight',
-                              document.body.scrollHeight
-                            );
-                          """,
-              );
+              _updateContentHeight();
+              // controller.evaluateJavascript(
+              //   source: """
+              //               window.flutter_inappwebview.callHandler(
+              //                 'SetContentHeight',
+              //                 document.body.scrollHeight
+              //               );
+              //             """,
+              // );
             }
           },
         );
