@@ -33,7 +33,7 @@ class VeriGorViewModel {
     } catch (e) {
       // Handle error
       log('Error sending question: $e');
-      return Message.text('Error sending question: $e');
+      return Message.text('Soru gönderilirken bir hata oluştu. Lütfen Token ve diğer bilgileri kontrol edin.');
     }
   }
 }

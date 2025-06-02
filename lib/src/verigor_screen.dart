@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:verigor_module_flutter/models/message_type.dart';
 import 'package:verigor_module_flutter/src/verigor_view_model.dart';
@@ -10,7 +13,9 @@ class VeriGorModule extends StatefulWidget {
   final String Function() tokenProvider;
   final List<String>? exampleQuestions;
   VeriGorModule({super.key, required this.tokenProvider, List<String>? exampleQuestions})
-      : exampleQuestions = exampleQuestions ?? List.filled(3, '', growable: false);
+      : exampleQuestions = exampleQuestions != null
+            ? exampleQuestions.take(3).toList() // Maksimum 3 soru al
+            : [];
 
   @override
   createState() => _VeriGorModuleState();
@@ -26,22 +31,20 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
   int? _selectedExampleIndex;
   bool _showTabSection = false;
 
-  final List<String> _defaultExampleQuestions = [
-    "Tüm zamanların en yüksel gelir elde edilen satışı hangisi?",
-    "2025 Yılına ait en yüksek gelir elde edilen satış hangisi?",
-    "2025 Yılına ait en düşük gelir elde edilen satış hangisi?",
-  ];
-
   late TabController _tabController;
   final VeriGorViewModel _viewModel = VeriGorViewModel();
 
   // Mesaj listesi: sorular da cevaplar da Message tipinde tutuluyor
   final List<Message> _messages = [];
-
   // Fetches the list of files from the server
   Future<List<String>> _getFiles() async {
-    final token = widget.tokenProvider();
-    return await _viewModel.getFiles(token);
+    try {
+      final token = widget.tokenProvider();
+      return await _viewModel.getFiles(token);
+    } catch (e) {
+      // Hata durumunda boş liste döndür
+      return [];
+    }
   }
 
   void _sendQuestion() async {
@@ -65,6 +68,8 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
       setState(() {
         _messages.add(msg);
       });
+
+      await _saveChatHistory();
 
       if (mounted) {
         FocusScope.of(context).unfocus();
@@ -101,15 +106,76 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    // Generate UUID for threadId
-    _threadId = Uuid().v4();
     _tabController = TabController(length: 2, vsync: this);
+    _loadChatHistory();
+  }
+
+  Future<void> _saveChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final messagesJson = _messages
+        .map((msg) => {
+              'type': msg.type.toString(),
+              'text': msg.text,
+              'requestId': msg.requestId,
+            })
+        .toList();
+
+    await prefs.setString('verigor_chat_messages', jsonEncode(messagesJson));
+    await prefs.setString('verigor_thread_id', _threadId);
+    await prefs.setString('verigor_selected_file', _selectedFile);
+  }
+
+  // Chat geçmişini yükle
+  Future<void> _loadChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final messagesString = prefs.getString('verigor_chat_messages');
+    final threadId = prefs.getString('verigor_thread_id');
+    final selectedFile = prefs.getString('verigor_selected_file');
+
+    if (messagesString != null && threadId != null) {
+      final messagesList = jsonDecode(messagesString) as List;
+      setState(() {
+        _threadId = threadId;
+        _selectedFile = selectedFile ?? '';
+        _messages.clear();
+        for (var msgData in messagesList) {
+          if (msgData['type'].contains('text')) {
+            _messages.add(Message.text(msgData['text']));
+          } else {
+            _messages.add(Message.webView(msgData['requestId']));
+          }
+        }
+      });
+    } else {
+      // İlk açılışsa yeni thread oluştur
+      _threadId = Uuid().v4();
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _startNewChat() {
+    setState(() {
+      _messages.clear();
+      _threadId = Uuid().v4();
+      _selectedFile = "";
+      _textController.clear();
+      _showTabSection = false;
+      _showFileList = false;
+      _selectedExampleIndex = null;
+    });
+    _clearChatHistory();
+  }
+
+  Future<void> _clearChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('verigor_chat_messages');
+    await prefs.remove('verigor_thread_id');
+    await prefs.remove('verigor_selected_file');
   }
 
   @override
@@ -123,9 +189,71 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
       },
       child: Scaffold(
         backgroundColor: Colors.grey.shade200,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          actions: [
+            TextButton.icon(
+              onPressed: _startNewChat,
+              icon: Icon(Icons.add, color: Colors.blue),
+              label: Text(
+                'Yeni Sohbet',
+                style: TextStyle(color: Colors.blue),
+              ),
+            ),
+            SizedBox(width: 8),
+          ],
+        ),
         body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Column(children: [_answerWebViewWidgets(), const SizedBox(height: 200)]),
+          child: Column(children: [
+            _messages.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Center(
+                          child: Image.asset(
+                            'assets/images/verigor_guy.png', // Robot resminiz
+                            package: 'verigor_module_flutter',
+                            width: 140,
+                            height: 140,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Yedek bir ikon göster
+                              return Icon(Icons.smart_toy, size: 75, color: Colors.white);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Başlık
+                        Text(
+                          'Size Nasıl Yardımcı Olabilirim?',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Alt başlık
+                        Text(
+                          'Merak ettiğiniz herhangi bir soruyu bana sorabilirsiniz.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            _answerWebViewWidgets(),
+            const SizedBox(height: 200)
+          ]),
         ),
         bottomSheet: Column(
           mainAxisSize: MainAxisSize.min,
@@ -164,9 +292,13 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
                     children: [
                       _fileListWidget(),
                       ExampleQuestionsWidget(
-                        questions: widget.exampleQuestions ?? _defaultExampleQuestions,
+                        questions: widget.exampleQuestions ?? [],
                         selectedIndex: _selectedExampleIndex,
-                        onChanged: (v) => setState(() => _textController.text = widget.exampleQuestions?[v ?? 0] ?? ""),
+                        onChanged: (v) => setState(() {
+                          if (v != null) {
+                            _textController.text = v;
+                          }
+                        }),
                       ),
                     ],
                   ),
@@ -223,8 +355,22 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
       child: FutureBuilder<List<String>>(
         future: _getFiles(),
         builder: (context, snap) {
-          if (!snap.hasData) return const Padding(padding: EdgeInsets.all(8), child: Center(child: CircularProgressIndicator()));
-          final files = snap.data!;
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Padding(padding: EdgeInsets.all(8), child: Center(child: CircularProgressIndicator()));
+          }
+
+          if (snap.hasError) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.red[300]),
+                const SizedBox(width: 8),
+                Flexible(child: Text('Dosyalar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.')),
+              ],
+            );
+          }
+
+          final files = snap.data ?? [];
 
           if (files.isEmpty) {
             return Row(
@@ -271,8 +417,14 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
             children: [
               Expanded(
                 child: TextField(
+                  maxLength: 100,
                   controller: _textController,
-                  decoration: const InputDecoration(hintText: 'Sorunuzu buraya yazabilirsiniz', border: OutlineInputBorder()),
+                  decoration: InputDecoration(
+                    hintText: 'Sorunuzu buraya yazabilirsiniz',
+                    border: const OutlineInputBorder(),
+                    counterText: '', // Karakter sayacını gizler
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  ),
                   onSubmitted: (_) {
                     _sendQuestion();
                     setState(() {
@@ -284,7 +436,18 @@ class _VeriGorModuleState extends State<VeriGorModule> with SingleTickerProvider
               const SizedBox(width: 8),
               _isSending
                   ? const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2))
-                  : IconButton(icon: const Icon(Icons.send), onPressed: _sendQuestion),
+                  : DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        color: Colors.white,
+                        icon: const Icon(Icons.send),
+                        onPressed: _sendQuestion,
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ),
             ],
           ),
         ),
