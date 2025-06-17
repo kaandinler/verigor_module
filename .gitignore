@@ -33,3 +33,8 @@ build/
 
 # FVM Version Cache
 .fvm/
+
+# Volume Temporary Files
+# These files are created by the OS and should not be included in version control.
+._*
+.DS_Store
